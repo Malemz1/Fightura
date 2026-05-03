@@ -1,0 +1,46 @@
+---
+title: Fightura
+description: ทำให้ avatar Figura ใช้งานกับ Epic Fight ได้บน Minecraft Forge 1.20.1
+template: splash
+hero:
+  tagline: มอดเดียว — avatar Figura ของคุณตามท่า Epic Fight ราวกับเกิดมาเพื่อใช้งานร่วมกัน
+  actions:
+    - text: ติดตั้ง
+      link: /Fightura/th/install/
+      icon: right-arrow
+      variant: primary
+    - text: ดูรูปแบบการตั้งชื่อ
+      link: /Fightura/th/naming/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## ทำอะไรได้บ้าง
+
+<CardGrid>
+    <Card title="Body ตามท่า EF" icon="random">
+        Figura part ที่ตรงกับ Epic Fight joint จะเกาะตามอัตโนมัติ ม้วน, dash, โจมตี — avatar ตามท่าจริงทุกอย่าง
+    </Card>
+    <Card title="Head accessory อยู่บนหัว" icon="seti:plan">
+        ผม, หมวก, เขา, หู — ทุก part ที่ parent เป็น `Head` ตามตำแหน่งหัวตอน Epic Fight ทำท่าโจมตี ไม่ลอย
+    </Card>
+    <Card title="ไม่ต้องแปลงโมเดล" icon="approve-check">
+        ใช้ avatar Figura เก่าของคุณได้เลย ถ้าชื่อ part ตรง convention ก็ทำงานทันที ไม่ตรงก็ใช้ Lua 3 บรรทัดผูก
+    </Card>
+    <Card title="Client-only" icon="laptop">
+        Server ไม่ต้องลงอะไร ผู้เล่นที่อยากใช้ฟีเจอร์ติดตั้ง Fightura + Figura + Epic Fight ที่ client ตัวเองพอ
+    </Card>
+</CardGrid>
+
+## ติดตั้งเร็ว ๆ
+
+1. โหลด `fightura-1.0.0.jar`
+2. โยนเข้าโฟลเดอร์ `mods/` ของ client พร้อม Figura `0.1.5+1.20.1-forge` และ Epic Fight `20.14.15.1+`
+3. เปิดเกม
+
+จบเลย ดูแบบละเอียดที่ [คู่มือติดตั้ง](/Fightura/th/install/)
+
+## ทำงานยังไง (สรุปย่อ)
+
+Fightura ติดตั้ง render layer เข้ากับ player renderer ของ Epic Fight ทุก frame มันจะเก็บท่าปัจจุบันของ Epic Fight แล้วสำหรับทุก ๆ Figura part ที่ map ไปยัง joint ที่รู้จัก (ผ่าน `parentType`, ชื่อ part, หรือ Lua override) — part นั้นจะถูก set transform ให้ตาม joint ส่วน part ที่ไม่มี mapping จะ fallback ไปยัง render path ปกติของ Figura และ inherit จาก parent โดยอัตโนมัติ pipeline เดียวจัดการ avatar accessory, full-body, และ bend bone rig ทั้งหมดเหมือนกัน

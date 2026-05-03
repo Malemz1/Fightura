@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.fightura.fightura.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "fightura.refmap.json",
+  "client": [
+    "FighturaArmorMixin",
+    "FighturaPartMatrixMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

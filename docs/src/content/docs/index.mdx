@@ -1,0 +1,46 @@
+---
+title: Fightura
+description: Make Figura avatars work with Epic Fight on Minecraft Forge 1.20.1.
+template: splash
+hero:
+  tagline: One mod. Your Figura avatar follows Epic Fight animations like it always belonged there.
+  actions:
+    - text: Install
+      link: /install/
+      icon: right-arrow
+      variant: primary
+    - text: Naming Conventions
+      link: /naming/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What it does
+
+<CardGrid>
+    <Card title="Body follows EF pose" icon="random">
+        Figura body parts that match a known Epic Fight joint anchor to it automatically. Roll, dash, attack — the avatar tracks the real combat pose.
+    </Card>
+    <Card title="Head accessories stay on the head" icon="seti:plan">
+        Hair, hats, horns, ears — anything parented to `Head` follows the head joint. No more floating accessories during attack swings.
+    </Card>
+    <Card title="No model conversion" icon="approve-check">
+        Use any Figura avatar you already own. If your part names match the conventions, it works. Otherwise, three lines of Lua bind your custom names.
+    </Card>
+    <Card title="Client-only" icon="laptop">
+        Server doesn't need anything. Each player who wants the feature installs Fightura, Figura, and Epic Fight on their client.
+    </Card>
+</CardGrid>
+
+## Quick install
+
+1. Download `fightura-1.0.0.jar`
+2. Drop it into your client `mods/` folder alongside Figura `0.1.5+1.20.1-forge` and Epic Fight `20.14.15.1+`
+3. Launch Minecraft
+
+That's the whole setup. See the [Installation guide](/install/) for the long version.
+
+## How it works in one paragraph
+
+Fightura attaches a render layer to Epic Fight's player renderer. Each frame it captures the current Epic Fight pose, then for every Figura part that maps to a known Epic Fight joint (by `parentType`, by part name, or by Lua override), the part's transform is set to follow that joint. Parts without a mapping fall through to Figura's normal render path and inherit through their parent. One pipeline handles accessory avatars, full-body avatars, and bend-bone rigs the same way.

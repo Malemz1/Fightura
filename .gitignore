@@ -1,0 +1,19 @@
+.gradle/
+build/
+out/
+run/
+run-data/
+*.iml
+.idea/
+.settings/
+.classpath
+.project
+
+# docs site
+docs/node_modules/
+docs/dist/
+docs/.astro/
+
+# JDK bundle (don't commit binaries)
+.tools/jdk17/
+.tools/jdk17.zip
