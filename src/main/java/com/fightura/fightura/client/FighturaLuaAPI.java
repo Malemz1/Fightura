@@ -12,6 +12,7 @@ import org.figuramc.figura.entries.annotations.FiguraAPIPlugin;
 import org.figuramc.figura.lua.LuaWhitelist;
 import org.figuramc.figura.lua.docs.LuaMethodDoc;
 import org.figuramc.figura.lua.docs.LuaMethodOverload;
+import org.figuramc.figura.lua.api.event.LuaEvent;
 import org.figuramc.figura.lua.docs.LuaTypeDoc;
 import org.figuramc.figura.math.matrix.FiguraMat4;
 import org.figuramc.figura.math.vector.FiguraVec3;
@@ -29,6 +30,25 @@ import yesman.epicfight.world.capabilities.entitypatch.player.PlayerPatch;
 public final class FighturaLuaAPI implements FiguraAPI {
     private final Avatar avatar;
 
+    /** Fires when an Epic Fight attack animation begins. Args: motion name. */
+    @LuaWhitelist
+    public final LuaEvent attackStart = new LuaEvent();
+    /** Fires when an Epic Fight attack animation ends. */
+    @LuaWhitelist
+    public final LuaEvent attackEnd = new LuaEvent();
+    /** Fires when the entity enters a hurt state. */
+    @LuaWhitelist
+    public final LuaEvent hurtStart = new LuaEvent();
+    /** Fires when the entity is knocked down. */
+    @LuaWhitelist
+    public final LuaEvent knockDown = new LuaEvent();
+    /** Fires when player_mode changes (BATTLE / MINING / DEFAULT). Args: new mode, old mode. */
+    @LuaWhitelist
+    public final LuaEvent modeChange = new LuaEvent();
+    /** Fires when current living motion changes. Args: new motion, old motion. */
+    @LuaWhitelist
+    public final LuaEvent motionChange = new LuaEvent();
+
     public FighturaLuaAPI() {
         this.avatar = null;
     }
@@ -39,7 +59,9 @@ public final class FighturaLuaAPI implements FiguraAPI {
 
     @Override
     public FiguraAPI build(Avatar avatar) {
-        return new FighturaLuaAPI(avatar);
+        FighturaLuaAPI api = new FighturaLuaAPI(avatar);
+        FighturaEventBus.register(avatar.owner, api);
+        return api;
     }
 
     @Override

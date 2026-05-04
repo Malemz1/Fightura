@@ -100,6 +100,54 @@ fightura:clearBone("MyTailRoot")
 ### `getSupportedBones() -> string[]`
 คืนรายการ alias built-in ทั้งหมดที่ Fightura รู้จัก (ในรูปแบบ lowercase) ใช้ตรวจว่าชื่อไหนไม่ต้อง `mapBone`
 
+## Epic Fight events
+
+Fightura ยิง Lua event เมื่อสถานะ Epic Fight ของ entity เปลี่ยน — ไม่ต้อง poll เอง แต่ละ event เป็น `LuaEvent` field บน `fightura` API ลงทะเบียน handler ด้วย `:register(func)`
+
+```lua
+function events.LOAD()
+  fightura.attackStart:register(function(motion)
+    -- motion คือชื่อ living motion ตอนนี้ (เช่น "ATTACK")
+    animations.MyAttackReact:play()
+  end)
+
+  fightura.attackEnd:register(function()
+    animations.MyAttackReact:stop()
+  end)
+
+  fightura.modeChange:register(function(newMode, oldMode)
+    if newMode == "BATTLE" then
+      animations.DrawSword:play()
+    elseif newMode == "MINING" then
+      animations.SheathSword:play()
+    end
+  end)
+
+  fightura.hurtStart:register(function()
+    animations.HurtFlinch:play()
+  end)
+
+  fightura.knockDown:register(function()
+    animations.KnockedDown:play()
+  end)
+
+  fightura.motionChange:register(function(newMotion, oldMotion)
+    -- เช่น เปลี่ยนจาก "IDLE" ไป "WALK"
+  end)
+end
+```
+
+| Event | Args | ยิงเมื่อ |
+| --- | --- | --- |
+| `attackStart` | `motion: string` | Epic Fight animation โจมตีเริ่ม |
+| `attackEnd` | (none) | Animation โจมตีจบ |
+| `hurtStart` | (none) | Entity เข้าสู่สถานะ hurt |
+| `knockDown` | (none) | Entity ถูกล้ม |
+| `modeChange` | `newMode, oldMode: string` | `playerMode` เปลี่ยน (`BATTLE` / `MINING` / `DEFAULT`) |
+| `motionChange` | `newMotion, oldMotion: string` | Living motion ปัจจุบันเปลี่ยน |
+
+Event ยิงตอน client tick ส่วน method แบบ poll (`isAttacking()`, `isEpicFightMode()`) ยังใช้ได้ตามปกติเหมาะกับ logic ที่รันทุก frame
+
 ## Pattern พื้นฐาน
 
 สคริปต์เริ่มต้นที่เหมาะสม:

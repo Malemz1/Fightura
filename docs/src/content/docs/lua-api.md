@@ -100,6 +100,54 @@ Remove every override this avatar has set.
 ### `getSupportedBones() -> string[]`
 Return the list of every built-in alias Fightura recognizes (case-insensitive lowercase form). Useful for inspecting what won't need a `mapBone` call.
 
+## Epic Fight events
+
+Fightura fires Lua events when the entity's Epic Fight state changes — no polling required. Each event is a `LuaEvent` field on the `fightura` API; register handlers with `:register(func)`.
+
+```lua
+function events.LOAD()
+  fightura.attackStart:register(function(motion)
+    -- motion is the current living motion name (e.g. "ATTACK")
+    animations.MyAttackReact:play()
+  end)
+
+  fightura.attackEnd:register(function()
+    animations.MyAttackReact:stop()
+  end)
+
+  fightura.modeChange:register(function(newMode, oldMode)
+    if newMode == "BATTLE" then
+      animations.DrawSword:play()
+    elseif newMode == "MINING" then
+      animations.SheathSword:play()
+    end
+  end)
+
+  fightura.hurtStart:register(function()
+    animations.HurtFlinch:play()
+  end)
+
+  fightura.knockDown:register(function()
+    animations.KnockedDown:play()
+  end)
+
+  fightura.motionChange:register(function(newMotion, oldMotion)
+    -- e.g. transitioning from "IDLE" to "WALK"
+  end)
+end
+```
+
+| Event | Args | Fires when |
+| --- | --- | --- |
+| `attackStart` | `motion: string` | An Epic Fight attack animation begins |
+| `attackEnd` | (none) | The attack animation finishes |
+| `hurtStart` | (none) | The entity enters a hurt state |
+| `knockDown` | (none) | The entity is knocked down |
+| `modeChange` | `newMode, oldMode: string` | `playerMode` changes (`BATTLE` / `MINING` / `DEFAULT`) |
+| `motionChange` | `newMotion, oldMotion: string` | Current living motion changes |
+
+Events fire on the client tick. Polling APIs (`isAttacking()`, `isEpicFightMode()`) still work and are equivalent for logic that runs every frame.
+
 ## Lifecycle pattern
 
 A reasonable starting script:

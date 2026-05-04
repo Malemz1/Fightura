@@ -59,29 +59,57 @@ repositories {
     mavenCentral()
 }
 
-def dependencyDir = file(fightura_dependency_dir)
+// Pinned dependency files. Auto-downloaded from Modrinth CDN if missing,
+// so anyone can clone the repo and build without manual jar setup.
+def depsDir = file("$buildDir/deps")
+def figuraJar = file("$depsDir/figura-${figura_version}-forge-mc.jar")
+def epicFightJar = file("$depsDir/epic-fight-${epicfight_version}.jar")
 
-def requireDependency = { String fileName ->
-    File jar = new File(dependencyDir, fileName)
-    if (!jar.exists()) {
-        throw new GradleException("Required Fightura dependency not found: ${jar}")
+def downloadIfMissing = { File target, String url ->
+    if (target.exists()) return
+    target.parentFile.mkdirs()
+    logger.lifecycle("Fightura: downloading ${target.name}")
+    new URL(url).withInputStream { input ->
+        target.withOutputStream { it << input }
     }
-    return jar
 }
+
+tasks.register('downloadFigura') {
+    onlyIf { !figuraJar.exists() }
+    doLast {
+        downloadIfMissing(figuraJar, figura_url)
+    }
+}
+
+tasks.register('downloadEpicFight') {
+    onlyIf { !epicFightJar.exists() }
+    doLast {
+        downloadIfMissing(epicFightJar, epicfight_url)
+    }
+}
+
+tasks.named('compileJava') { dependsOn 'downloadFigura', 'downloadEpicFight' }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    def epicFightJar = requireDependency(epicfight_jar)
-    def figuraJar = requireDependency(figura_jar)
-
-    compileOnly fg.deobf(files(epicFightJar))
     compileOnly fg.deobf(files(figuraJar))
-
-    runtimeOnly fg.deobf(files(epicFightJar))
+    compileOnly fg.deobf(files(epicFightJar))
     runtimeOnly fg.deobf(files(figuraJar))
+    runtimeOnly fg.deobf(files(epicFightJar))
+
+    // luaj is bundled inside the Figura jar at runtime; we only need its
+    // types for compilation when calling Figura's LuaEvent#call(Varargs).
+    compileOnly 'org.luaj:luaj-jse:3.0.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
 }
 
 tasks.named('processResources', ProcessResources).configure {
