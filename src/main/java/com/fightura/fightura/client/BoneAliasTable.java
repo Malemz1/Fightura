@@ -186,6 +186,21 @@ public final class BoneAliasTable {
         return BUILT_IN.get(key);
     }
 
+    /**
+     * True if {@code alias} has been set explicitly by a Lua script via
+     * {@code fightura:mapBone(alias, joint)}. Used to gate name-based matrix
+     * bridging — built-in names that overlap with Figura {@code parentType}
+     * names (Head, Body, LeftArm, …) should match by parent type only,
+     * not by part name, to avoid stacking the joint transform twice.
+     */
+    public static boolean isLuaMapped(UUID owner, String alias) {
+        if (owner == null || alias == null) {
+            return false;
+        }
+        Map<String, String> custom = CUSTOM.get(owner);
+        return custom != null && custom.containsKey(alias.toLowerCase(Locale.ROOT));
+    }
+
     public static void map(UUID owner, String alias, String joint) {
         if (owner == null || alias == null || joint == null) {
             return;

@@ -47,7 +47,7 @@ public final class FighturaPipeline {
 
         Matrix4f jointFigura = toFiguraSpace(jointAbsolute);
         FiguraMat4 localMatrix = computeLocalMatrix(part, customization, mapping.kind());
-        FiguraMat4 ancestorMatrix = findAncestorEffective(part.parent, context.owner());
+        FiguraMat4 ancestorMatrix = accumulateAncestorChain(part);
 
         FiguraMat4 result = FiguraMat4.of();
         if (ancestorMatrix != null) {
@@ -65,16 +65,87 @@ public final class FighturaPipeline {
         return true;
     }
 
+    /**
+     * Names of bend / sub-segment bones that we auto-bridge by part name when
+     * no parent_type is set. These are full-body / bend rig names that don't
+     * overlap with Figura's {@code parentType} primary segments — bridging
+     * them by name doesn't double-stack a joint transform that the parent
+     * type system would already apply.
+     */
+    private static final java.util.Set<String> AUTO_BRIDGE_NAMES = java.util.Set.of(
+            // forearms / hands
+            "lefthand", "righthand",
+            "leftforearm", "rightforearm",
+            "leftlowerarm", "rightlowerarm",
+            "leftelbow", "rightelbow",
+            "larmlower", "rarmlower",
+            // shins / feet
+            "leftfoot", "rightfoot",
+            "leftshin", "rightshin",
+            "leftlowerleg", "rightlowerleg",
+            "leftknee", "rightknee",
+            "llegLower".toLowerCase(), "rlegLower".toLowerCase(),
+            // mixamo lower-arm / lower-leg explicit
+            "mixamorig:leftforearm", "mixamorig:rightforearm",
+            "mixamorig:leftleg", "mixamorig:rightleg",
+            // rigify lower segments
+            "forearm.l", "forearm.r",
+            "shin.l", "shin.r",
+            // VRM lower segments
+            "j_bip_l_lowerarm", "j_bip_r_lowerarm",
+            "j_bip_l_lowerleg", "j_bip_r_lowerleg"
+    );
+
     private static Mapping resolveMapping(FiguraModelPart part, UUID owner) {
+        // Parent-type match: explicit avatar maker intent — always bridge.
         String byParent = FighturaJointMap.byParentType(part.parentType, owner);
         if (byParent != null) {
-            return new Mapping(byParent, MatchKind.PARENT_TYPE);
+            return guardSameJoint(part, owner, byParent, MatchKind.PARENT_TYPE);
+        }
+        // Name match: only auto-bridge bend bones, or names explicitly
+        // registered via fightura:mapBone(...) by the avatar's Lua script.
+        String byName = FighturaJointMap.byName(part.name, owner);
+        if (byName == null || part.name == null) {
+            return null;
+        }
+        String key = part.name.toLowerCase(java.util.Locale.ROOT);
+        boolean autoBridgeable = AUTO_BRIDGE_NAMES.contains(key)
+                || FighturaJointMap.isLuaMapped(owner, part.name);
+        if (!autoBridgeable) {
+            return null;
+        }
+        return guardSameJoint(part, owner, byName, MatchKind.NAME);
+    }
+
+    private static Mapping guardSameJoint(FiguraModelPart part, UUID owner, String joint, MatchKind kind) {
+        FiguraModelPart cursor = part.parent;
+        while (cursor != null) {
+            String ancestorJoint = directJointFor(cursor, owner);
+            if (ancestorJoint != null && ancestorJoint.equals(joint)) {
+                return null;
+            }
+            cursor = cursor.parent;
+        }
+        return new Mapping(joint, kind);
+    }
+
+    private static String directJointFor(FiguraModelPart part, UUID owner) {
+        String byParent = FighturaJointMap.byParentType(part.parentType, owner);
+        if (byParent != null) {
+            return byParent;
+        }
+        if (part.name == null) {
+            return null;
         }
         String byName = FighturaJointMap.byName(part.name, owner);
-        if (byName != null) {
-            return new Mapping(byName, MatchKind.NAME);
+        if (byName == null) {
+            return null;
         }
-        return null;
+        String key = part.name.toLowerCase(java.util.Locale.ROOT);
+        if (!AUTO_BRIDGE_NAMES.contains(key) && !FighturaJointMap.isLuaMapped(owner, part.name)) {
+            return null;
+        }
+        return byName;
     }
 
     private static FiguraMat4 computeLocalMatrix(FiguraModelPart part, PartCustomization customization, MatchKind kind) {
@@ -96,14 +167,35 @@ public final class FighturaPipeline {
         return snapshot.getPositionMatrix();
     }
 
-    private static FiguraMat4 findAncestorEffective(FiguraModelPart cursor, UUID owner) {
+    /**
+     * Accumulate the entire ancestor chain's positionMatrix, in the same
+     * order Figura composes it via its customization stack. Returns null if
+     * the part has no ancestors. The accumulation is root × ... × parent —
+     * matching how Figura's PartCustomizationStack.modify() right-multiplies
+     * each pushed customization.
+     */
+    private static FiguraMat4 accumulateAncestorChain(FiguraModelPart part) {
+        if (part == null || part.parent == null) {
+            return null;
+        }
+        java.util.Deque<FiguraModelPart> stack = new java.util.ArrayDeque<>();
+        FiguraModelPart cursor = part.parent;
         while (cursor != null) {
-            if (resolveMapping(cursor, owner) != null) {
-                return cursor.customization.getPositionMatrix();
-            }
+            stack.push(cursor);
             cursor = cursor.parent;
         }
-        return null;
+        FiguraMat4 result = FiguraMat4.of();
+        boolean first = true;
+        while (!stack.isEmpty()) {
+            FiguraMat4 m = stack.pop().customization.getPositionMatrix();
+            if (first) {
+                result.set(m);
+                first = false;
+            } else {
+                result.rightMultiply(m);
+            }
+        }
+        return first ? null : result;
     }
 
     /**

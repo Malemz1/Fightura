@@ -21,6 +21,10 @@ public final class FighturaJointMap {
         return BoneAliasTable.resolve(name, owner);
     }
 
+    public static boolean isLuaMapped(UUID owner, String name) {
+        return BoneAliasTable.isLuaMapped(owner, name);
+    }
+
     public static void map(UUID owner, String alias, String joint) {
         BoneAliasTable.map(owner, alias, joint);
     }
